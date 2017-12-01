@@ -12,7 +12,6 @@ class Cliente:
 	def loop(self):
 		while True:
 			message = sys.stdin.readline()
-			print("Mensagem recebida = ", message)
 			if(message[0] == "Q"):
 				print("QUIT")
 				self.quit()
@@ -32,10 +31,14 @@ class Cliente:
 	def keyConsult(self, message):
 		print(message)
 		messageType = pack("!H", 5)
-		seq = pack("!H", self.numSeq)
+		print("NumSeq = ", self.numSeq)
+		seq = pack("!L", self.numSeq)
 		key = message.encode()
 		finalMessage = messageType + seq + key
+		print("ServAdress = ", self.servAdress)
 		sent = self.con.sendto(finalMessage, self.servAdress)
+		data, adress = self.con.recvfrom(414)
+		print("DADOS CHEGARAM = ", data)
 
 	def quit(self):
 		self.con.close()

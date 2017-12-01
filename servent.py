@@ -1,6 +1,6 @@
 import socket
 import sys
-
+from struct import pack, unpack
 
 class Servent:
 
@@ -27,12 +27,31 @@ class Servent:
 		print("NBP = ", self.keyDict["nbp"])
 		print("COMPRESSNET = ", self.keyDict["compressnet"])
 
+	def keyReq(self, data):
+		numSeq = unpack("!L", data[2:6])[0]
+		print("NumSeq = ", numSeq)
+		requestedKey = data[6:].decode()
+		print("REQ = ", requestedKey)
+
 	def loop(self):
 		while True:
 			data, adress = self.con.recvfrom(414)
-			print(data)
-			pass
-
+			#print("DATA = ", data)
+			typeMessage = unpack("!H", data[:2])[0]
+			print("TYPE = ", typeMessage)
+			print(type(typeMessage))
+			if typeMessage == 5:
+				self.keyReq(data)
+			elif typeMessage == 6:
+				pass
+			elif typeMessage == 7:
+				pass
+			elif typeMessage == 8:
+				pass
+			#print("ADRESS = ", adress)
+			#print("NEW DATA = ", data2)
+			#data = data + pack("!H", 5151)
+			self.con.sendto(data, adress)
 
 #Bind the socket to the port
 # while True:
