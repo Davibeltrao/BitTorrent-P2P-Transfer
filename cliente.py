@@ -9,6 +9,89 @@ class Cliente:
 		self.servAdress = Adress
 		self.numSeq = 1
 
+	def topologyConsult(self):
+		messageType = pack("!H", 6)
+		seq = pack("!L", self.numSeq)
+		finalMessage = messageType + seq
+		sent = self.con.sendto(finalMessage, self.servAdress)
+		self.receiveTopologyData(messageType, self.numSeq)
+
+	def keyConsult(self, message):
+		print(message)
+		messageType = pack("!H", 5)
+		print("NumSeq = ", self.numSeq)
+		seq = pack("!L", self.numSeq)
+		key = message.encode()
+		finalMessage = messageType + seq + key
+		print("ServAdress = ", self.servAdress)
+		sent = self.con.sendto(finalMessage, self.servAdress)
+		self.receiveKeyData(messageType, self.numSeq, key)
+
+	def receiveKeyData(self, messageType, seqEsperado, key):
+		flagRetransmissao = False
+		self.con.settimeout(4)
+		try:
+			data, adress = self.con.recvfrom(414)
+			seq = unpack("!L", data[2:6])[0]
+			if seq != seqEsperado:
+				print("Mensagem incorreta do ", adress)
+			print("Data Received = ", data)
+		except:
+			print("Retrasmiting Data....")
+			flagRetransmissao = True
+		finally:
+			self.numSeq = self.numSeq + 1
+			if flagRetransmissao == True:
+				print("New NumSeq = ", self.numSeq)
+				seq = pack("!L", self.numSeq)
+				finalMessage = messageType + seq + key
+				sent = self.con.sendto(finalMessage, self.servAdress)
+				try:
+					data, adress = self.con.recvfrom(414)
+					seq = unpack("!L", data[2:6])[0]
+					if seq != self.numSeq:
+						print("Mensagem incorreta do ", adress)
+					print("Data Received = ", data)
+				except:
+					print("Nenhuma resposta recebida")
+				finally:
+					self.con.settimeout(0)
+					self.numSeq = self.numSeq + 1
+
+	def receiveTopologyData(self, messageType, seqEsperado):
+		flagRetransmissao = False
+		self.con.settimeout(4)
+		try:
+			data, adress = self.con.recvfrom(414)
+			seq = unpack("!L", data[2:6])[0]
+			if seq != seqEsperado:
+				print("Mensagem incorreta do ", adress)
+			print("Data Received = ", data)
+		except:
+			print("Retrasmiting Data....")
+			flagRetransmissao = True
+		finally:
+			self.numSeq = self.numSeq + 1
+			if flagRetransmissao == True:
+				print("New NumSeq = ", self.numSeq)
+				seq = pack("!L", self.numSeq)
+				finalMessage = messageType + seq
+				sent = self.con.sendto(finalMessage, self.servAdress)
+				try:
+					data, adress = self.con.recvfrom(414)
+					seq = unpack("!L", data[2:6])[0]
+					if seq != self.numSeq:
+						print("Mensagem incorreta do ", adress)
+					print("Data Received = ", data)
+				except:
+					print("Nenhuma resposta recebida")
+				finally:
+					self.con.settimeout(0)
+					self.numSeq = self.numSeq + 1
+
+	def quit(self):
+		self.con.close()
+
 	def loop(self):
 		while True:
 			message = sys.stdin.readline()
@@ -24,24 +107,6 @@ class Cliente:
 			elif message[0] == "T":
 				print("TOPOLOGY")
 				self.topologyConsult()
-
-	def topologyConsult(self):
-		pass
-
-	def keyConsult(self, message):
-		print(message)
-		messageType = pack("!H", 5)
-		print("NumSeq = ", self.numSeq)
-		seq = pack("!L", self.numSeq)
-		key = message.encode()
-		finalMessage = messageType + seq + key
-		print("ServAdress = ", self.servAdress)
-		sent = self.con.sendto(finalMessage, self.servAdress)
-		data, adress = self.con.recvfrom(414)
-		print("DADOS CHEGARAM = ", data)
-
-	def quit(self):
-		self.con.close()
 
 
 if __name__ == "__main__":

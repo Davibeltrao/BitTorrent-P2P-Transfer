@@ -43,6 +43,19 @@ class Servent:
 		except:
 			print("Key Doesnt exist here")
 
+	def topoReq(self, data, adress):
+		print("ENTREI")
+		seq = unpack("!L", data[2:6])[0]
+		for key, value in self.keyDict.items():
+			print("Key = ", key, " & Value = ", value)
+	
+		resp = pack("!H", 9)
+		seqResp = pack("!L", seq)
+		finalMessage = resp + seqResp
+		for key, value in self.keyDict.items():
+			finalMessage = finalMessage + key.encode()
+		sent = self.con.sendto(finalMessage, adress)	
+
 	def loop(self):
 		while True:
 			data, adress = self.con.recvfrom(414)
@@ -52,11 +65,7 @@ class Servent:
 			if typeMessage == 5:
 				self.keyReq(data, adress)
 			elif typeMessage == 6:
-				pass
-			elif typeMessage == 7:
-				pass
-			elif typeMessage == 8:
-				pass
+				self.topoReq(data, adress)
 
 #Bind the socket to the port
 # while True:
