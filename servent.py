@@ -27,11 +27,15 @@ class Servent:
 		print("COMPRESSNET = ", self.keyDict["compressnet"])
 
 	def setNeighbors(self, arg3):
-		print("\n\n")
+		print("\n")
 		arg3 = arg3.replace('[', ' ')
 		arg3 = arg3.replace(']', '')
 		arg3 = arg3.split()
-		print(arg3)
+		for adress in arg3:
+			adress = adress.split(':')
+			self.neighbors.append((adress[0], adress[1]))
+		for neighbors in self.neighbors:
+			print(neighbors)
 
 	def keyReq(self, data, adress):
 		numSeq = unpack("!L", data[2:6])[0]
