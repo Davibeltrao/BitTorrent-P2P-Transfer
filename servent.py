@@ -8,7 +8,7 @@ class Servent:
 		self.con = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.con.bind(Adress)
 		self.keyDict = {}
-		self.neighbors = {}
+		self.neighbors = []
 
 	def setDict(self, file):
 		with open(file, 'r') as f:
@@ -25,6 +25,13 @@ class Servent:
 		print("TCP MUX = ", self.keyDict["tcpmux"])
 		print("NBP = ", self.keyDict["nbp"])
 		print("COMPRESSNET = ", self.keyDict["compressnet"])
+
+	def setNeighbors(self, arg3):
+		print("\n\n")
+		arg3 = arg3.replace('[', ' ')
+		arg3 = arg3.replace(']', '')
+		arg3 = arg3.split()
+		print(arg3)
 
 	def keyReq(self, data, adress):
 		numSeq = unpack("!L", data[2:6])[0]
@@ -81,4 +88,5 @@ if __name__ == "__main__":
 	ADRESS = ("", PORT)
 	servent = Servent(ADRESS)
 	servent.setDict(sys.argv[2])
+	servent.setNeighbors(sys.argv[3])
 	servent.loop()
