@@ -29,7 +29,8 @@ class Servent:
 
 	def loop(self):
 		while True:
-			data, adress = self.con.recvfrom(414)			
+			data, adress = self.con.recvfrom(414)
+			print(data)
 			pass
 
 
