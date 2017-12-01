@@ -18,9 +18,9 @@ class Servent:
 				if(c[0] == "#"):
 					continue
 				if c[0] not in self.keyDict:
-					self.keyDict[c[0]] = c[1]
+					self.keyDict[c[0]] = c[1:]
 				else:
-					self.keyDict[c[0]] = c[1]
+					self.keyDict[c[0]] = c[1:]
 			f.close()
 		print("RTMP = ", self.keyDict["rtmp"])
 		print("TCP MUX = ", self.keyDict["tcpmux"])
