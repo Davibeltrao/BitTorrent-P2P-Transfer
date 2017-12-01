@@ -14,44 +14,49 @@ class Servent:
 		with open(file, 'r') as f:
 			for i in f:
 				c = i.split()
-				#print(c[0])
 				if(c[0] == "#"):
 					continue
 				if c[0] not in self.keyDict:
-					self.keyDict[c[0]] = c[1:]
+					self.keyDict[c[0]] = " ".join(c[1:])
 				else:
-					self.keyDict[c[0]] = c[1:]
+					self.keyDict[c[0]] = " ".join(c[1:])
 			f.close()
 		print("RTMP = ", self.keyDict["rtmp"])
 		print("TCP MUX = ", self.keyDict["tcpmux"])
 		print("NBP = ", self.keyDict["nbp"])
 		print("COMPRESSNET = ", self.keyDict["compressnet"])
 
-	def keyReq(self, data):
+	def keyReq(self, data, adress):
 		numSeq = unpack("!L", data[2:6])[0]
-		print("NumSeq = ", numSeq)
 		requestedKey = data[6:].decode()
-		print("REQ = ", requestedKey)
+		requestedKey = requestedKey.replace('\n', '')
+		print("REQ = ", requestedKey, " & NumSeq = ", numSeq)
+		print("RTMP DICT = ", self.keyDict["rtmp"])
+		try:
+			resp = pack("!H", 9)
+			seqResp = pack("!L", numSeq)
+			keyResp = self.keyDict[requestedKey]
+			message = keyResp.encode()
+			finalMessage = resp + seqResp + message
+			sent = self.con.sendto(finalMessage, adress)
+			print("SENT = ", sent)
+		except:
+			print("Key Doesnt exist here")
 
 	def loop(self):
 		while True:
 			data, adress = self.con.recvfrom(414)
-			#print("DATA = ", data)
 			typeMessage = unpack("!H", data[:2])[0]
 			print("TYPE = ", typeMessage)
 			print(type(typeMessage))
 			if typeMessage == 5:
-				self.keyReq(data)
+				self.keyReq(data, adress)
 			elif typeMessage == 6:
 				pass
 			elif typeMessage == 7:
 				pass
 			elif typeMessage == 8:
 				pass
-			#print("ADRESS = ", adress)
-			#print("NEW DATA = ", data2)
-			#data = data + pack("!H", 5151)
-			self.con.sendto(data, adress)
 
 #Bind the socket to the port
 # while True:
