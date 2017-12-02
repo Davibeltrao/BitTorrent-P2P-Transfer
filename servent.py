@@ -1,14 +1,15 @@
+import pprint
 import socket
 import sys
 from struct import pack, unpack
 
 class Servent:
 
-	def __init__(self, Adress):
+	def __init__(self, address):
 		self.con = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.con.bind(Adress)
+		self.con.bind(address)
 		self.keyDict = {}
-		self.neighbors = []
+		self._neighbors = []
 
 	def setDict(self, file):
 		with open(file, 'r') as f:
@@ -21,23 +22,33 @@ class Servent:
 				else:
 					self.keyDict[c[0]] = " ".join(c[1:])
 			f.close()
-		print("RTMP = ", self.keyDict["rtmp"])
-		print("TCP MUX = ", self.keyDict["tcpmux"])
-		print("NBP = ", self.keyDict["nbp"])
-		print("COMPRESSNET = ", self.keyDict["compressnet"])
 
-	def setNeighbors(self, arg3):
-		print("\n")
-		arg3 = arg3.replace('[', ' ')
-		arg3 = arg3.replace(']', '')
-		arg3 = arg3.split()
-		for adress in arg3:
-			adress = adress.split(':')
-			self.neighbors.append((adress[0], adress[1]))
-		for neighbors in self.neighbors:
-			print(neighbors)
+	def addNeighbor(self, arg3):
+		address = arg3.split(':')
+		self._neighbors.append((address[0], address[1]))
 
-	def keyReq(self, data, adress):
+	def getNeighbors(self):
+		listOfNeighbors = []
+		for neighbor in self._neighbors:
+			listOfNeighbors.append(neighbor)
+		return listOfNeighbors
+
+	def keyFlood(self, key, numSeq, ttl, ipOrigem, portoOrigem):
+		msgSeq = pack('!L', numSeq)
+		msgTipo = pack('!H', 7)
+		msgTtl = pack('!H', ttl)
+		msgIp = pack('!L', ipOrigem)
+		msgPorto = pack('!L', portoOrigem)
+		msgInfo = key
+		msg = msgTipo+msgSeq+msgIp+msgPorto+msgInfo
+		for neighbor in this._neighbors:
+			try:
+				(addr, port) = neighbor.split(':')
+				self.con.sendto(msg, (addr, int(port)))
+			except:
+				print("Dude where's my neighbor?")
+
+	def keyReq(self, data, address):
 		numSeq = unpack("!L", data[2:6])[0]
 		requestedKey = data[6:].decode()
 		requestedKey = requestedKey.replace('\n', '')
@@ -49,12 +60,15 @@ class Servent:
 			keyResp = self.keyDict[requestedKey]
 			message = keyResp.encode()
 			finalMessage = resp + seqResp + message
-			sent = self.con.sendto(finalMessage, adress)
+			sent = self.con.sendto(finalMessage, address)
 			print("SENT = ", sent)
 		except:
 			print("Key Doesnt exist here")
 
-	def topoReq(self, data, adress):
+	def topoFlood(self):
+		return
+
+	def topoReq(self, data, address):
 		print("ENTREI")
 		seq = unpack("!L", data[2:6])[0]
 		for key, value in self.keyDict.items():
@@ -65,18 +79,38 @@ class Servent:
 		finalMessage = resp + seqResp
 		for key, value in self.keyDict.items():
 			finalMessage = finalMessage + key.encode()
-		sent = self.con.sendto(finalMessage, adress)	
+		sent = self.con.sendto(finalMessage, address)	
 
 	def loop(self):
 		while True:
-			data, adress = self.con.recvfrom(414)
+			data, address = self.con.recvfrom(414)
 			typeMessage = unpack("!H", data[:2])[0]
 			print("TYPE = ", typeMessage)
 			print(type(typeMessage))
 			if typeMessage == 5:
-				self.keyReq(data, adress)
+				msgNumSeq = unpack('!L', data[3:7])
+				self.keyReq(data, address)
+				ip, port = address
+				self.keyFlood(msgKey, msgNumSeq, 3, ip, port)
 			elif typeMessage == 6:
-				self.topoReq(data, adress)
+				self.topoReq(data, address)
+			elif typeMessage==7:
+				msgTtl = unpack('!H', data[2:4])
+				if msgTtl<=0:
+					continue
+				msgNumSeq = unpack('!L', data[4:8])
+				msgIpOrig = unpack('!L', data[8:12])
+				msgPort = unpack('!L', data[12:14])
+				#enviar resposta
+				#codigo do keyReq() nao funciona
+			elif typeMessage==8:
+				msgTtl = unpack('!H', data[2:4])
+				if msgTtl<=0:
+					continue
+				msgNumSeq = unpack('!L', data[4:8])
+				msgIpOrig = unpack('!L', data[8:12])
+				msgPort = unpack('!L', data[12:14])
+				continue
 
 #Bind the socket to the port
 # while True:
@@ -89,8 +123,11 @@ class Servent:
 
 if __name__ == "__main__":
 	PORT = int(sys.argv[1])
-	ADRESS = ("", PORT)
-	servent = Servent(ADRESS)
+	address = ("", PORT)
+	servent = Servent(address)
 	servent.setDict(sys.argv[2])
-	servent.setNeighbors(sys.argv[3])
+	for neighbor in sys.argv[3:13]:
+		servent.addNeighbor(neighbor)
+	print 'Neighbors:'
+	pprint.pprint(servent.getNeighbors())
 	servent.loop()
