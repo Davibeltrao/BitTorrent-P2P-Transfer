@@ -102,7 +102,12 @@ class Servent:
 				msgIpOrig = unpack('!L', data[8:12])
 				msgPort = unpack('!L', data[12:14])
 				#enviar resposta
-				#codigo do keyReq() nao funciona
+				#codigo do keyReq() nao funciona?
+				for neighbor in listOfNeighbors:
+					(addr, port) = neighbor.split(':')
+					address = (addr, int(port))
+					keyReq(b'00'+data[4:8]+data[14:], address)
+				self.keyFlood(data[14:], msgNumSeq, msgTtl, msgIpOrig, msgPort)
 			elif typeMessage==8:
 				msgTtl = unpack('!H', data[2:4])
 				if msgTtl<=0:
