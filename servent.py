@@ -37,15 +37,15 @@ class Servent:
 		msgSeq = pack('!L', numSeq)
 		msgTipo = pack('!H', 7)
 		msgTtl = pack('!H', ttl)
-		msgIp = pack('!L', ipOrigem)
-		msgPorto = pack('!L', portoOrigem)
+		#msgIp = pack('!B', int(ipOrigem[0])) + pack('!B', int(ipOrigem[1])) + pack('!B', int(ipOrigem[2])) + pack('!B', int(ipOrigem[3])) 
+		msgPorto = pack('!H', portoOrigem)
 		msgInfo = key
-		msg = msgTipo+msgSeq+msgIp+msgPorto+msgInfo
-		for neighbor in this._neighbors:
+		msg = msgTipo+msgTtl+msgSeq+str(ipOrigem)+msgPorto+msgInfo
+		for neighbor in self._neighbors:
 			try:
-				(addr, port) = neighbor.split(':')
+				(addr, port) = neighbor
 				self.con.sendto(msg, (addr, int(port)))
-			except:
+			except Exception as e:
 				print("Dude where's my neighbor?")
 
 	def keyReq(self, data, address):
@@ -53,7 +53,6 @@ class Servent:
 		requestedKey = data[6:].decode()
 		requestedKey = requestedKey.replace('\n', '')
 		print("REQ = ", requestedKey, " & NumSeq = ", numSeq)
-		print("RTMP DICT = ", self.keyDict["rtmp"])
 		try:
 			resp = pack("!H", 9)
 			seqResp = pack("!L", numSeq)
@@ -62,8 +61,10 @@ class Servent:
 			finalMessage = resp + seqResp + message
 			sent = self.con.sendto(finalMessage, address)
 			print("SENT = ", sent)
-		except:
+			return True
+		except Exception as e:
 			print("Key Doesnt exist here")
+			return False
 
 	def topoFlood(self):
 		return
@@ -86,35 +87,37 @@ class Servent:
 			data, address = self.con.recvfrom(414)
 			typeMessage = unpack("!H", data[:2])[0]
 			print("TYPE = ", typeMessage)
-			print(type(typeMessage))
 			if typeMessage == 5:
-				msgNumSeq = unpack('!L', data[3:7])
-				self.keyReq(data, address)
+				msgNumSeq = unpack('!L', data[2:6])[0]
+				achouChave = self.keyReq(data, address)
+				if achouChave==True:
+					continue
 				ip, port = address
-				self.keyFlood(msgKey, msgNumSeq, 3, ip, port)
+				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
+				self.keyFlood(data[6:], msgNumSeq, 3, msgIp, port)
 			elif typeMessage == 6:
 				self.topoReq(data, address)
 			elif typeMessage==7:
-				msgTtl = unpack('!H', data[2:4])
+				msgTtl = unpack('!H', data[2:4])[0]
 				if msgTtl<=0:
 					continue
-				msgNumSeq = unpack('!L', data[4:8])
-				msgIpOrig = unpack('!L', data[8:12])
-				msgPort = unpack('!L', data[12:14])
-				#enviar resposta
+				msgNumSeq = unpack('!L', data[4:8])[0]
+				msgIpOrig = unpack('!L', data[8:12])[0]
+				msgPort = unpack('!H', data[12:14])[0]				#enviar resposta
 				#codigo do keyReq() nao funciona?
-				for neighbor in listOfNeighbors:
-					(addr, port) = neighbor.split(':')
-					address = (addr, int(port))
-					keyReq(b'00'+data[4:8]+data[14:], address)
-				self.keyFlood(data[14:], msgNumSeq, msgTtl, msgIpOrig, msgPort)
+				ipStr = str(unpack('!B', data[8])[0])+'.'+str(unpack('!B', data[9])[0])+'.'+str(unpack('!B', data[10])[0])+'.'+str(unpack('!B', data[11])[0])
+				addr = (ipStr, int(msgPort))
+				achouChave = self.keyReq((b'00'+data[4:8]+data[14:]), addr)
+				if achouChave==True:
+					continue
+				self.keyFlood(data[14:], msgNumSeq, int(msgTtl)-1, msgIpOrig, msgPort)
 			elif typeMessage==8:
-				msgTtl = unpack('!H', data[2:4])
+				msgTtl = unpack('!H', data[2:4])[0]
 				if msgTtl<=0:
 					continue
-				msgNumSeq = unpack('!L', data[4:8])
-				msgIpOrig = unpack('!L', data[8:12])
-				msgPort = unpack('!L', data[12:14])
+				msgNumSeq = unpack('!L', data[4:8])[0]
+				msgIpOrig = unpack('!L', data[8:12])[0]
+				msgPort = unpack('!H', data[12:14])[0]
 				continue
 
 #Bind the socket to the port
