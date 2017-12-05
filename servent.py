@@ -76,33 +76,33 @@ class Servent:
 		#msgIp = pack('!B', int(ipOrigem[0])) + pack('!B', int(ipOrigem[1])) + pack('!B', int(ipOrigem[2])) + pack('!B', int(ipOrigem[3])) 
 		msgPorto = pack('!H', portoOrigem)
 		msgInfo = key
-		fim_info = address0.encode() + ":".encode() + str(address1).encode() + " ".encode()
-		msg = msgTipo+msgTtl+msgSeq+ipOrigem+msgPorto+msgInfo+fim_info
+		fim_info = ""
+		msg = msgTipo+msgTtl+msgSeq+ipOrigem+msgPorto+msgInfo
 		print("INFO DA MENSAGEM = ", msgInfo.decode())
-		print("FIM MENSAGEM = ", fim_info)
 		for neighbor in self._neighbors:
 			try:
 				(addr, port) = neighbor
-				self.con.sendto(msg, (addr, int(port)))
+				fim_info = addr.encode() + ":".encode() + str(port).encode() + " ".encode()
+				#fim_info = ""
+				print("FIM MENSAGEM = ", fim_info)
+				#msg = msg + fim_info
+				self.con.sendto(msg + fim_info, (addr, int(port)))
 			except Exception as e:
 				print("Dude where's my neighbor?")
 
-	def topoReq(self, data, address, info, address_cliente, portinha):
-		#print("ENTREI")
+	def topoReq(self, data, address, info, address_cliente, porta, flag_frist = False):
+		#Porta = Porta do servidor atual
+
 		seq = unpack("!L", data[2:6])[0]
 		resp = pack("!H", 9)
 		seqResp = pack("!L", seq)
-		print("SEQUENCIA  = ", seq)
-		print("Adress = ", address)
-		print("Adress Encode = ", address[0].encode(), " e Porto = ", str(address[1]).encode())
-		#finalMessage = resp + seqResp + address[0].encode() + pack("!H", address[1])
-		#print("TIPO = ", type())
 		print("ADDRESS SEND = ", address_cliente)
-		#print("DATA [14:] = ", data.decode())
-		finalMessage = resp + seqResp + info + address[0].encode() + ":".encode() + str(portinha).encode()
+		finalMessage = resp + seqResp + info
+		print("INFO = ", info)
+		if flag_frist == True:
+			finalMessage = finalMessage + address[0].encode() + ":".encode() + str(self.servent_port).encode() + " ".encode()
 		sent = self.con.sendto(finalMessage, address_cliente)	
-		#return (info + address[0].encode() + ":".encode())
-		
+
 
 	def loop(self):
 		while True:
@@ -120,11 +120,14 @@ class Servent:
 				self.keyFlood(data[6:], msgNumSeq, 3, msgIp, port)
 			elif typeMessage == 6:
 				self.visited = False
+				flag_frist = True
 				info_inicial = "".encode()
 				ip, port = address
 				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
 				msgNumSeq = unpack('!L', data[2:6])[0]
-				self.topoReq(data, address, info_inicial, address, self.servent_port)
+				self.topoReq(data, address, info_inicial, address, self.servent_port, flag_frist)
+				data = data + address[0].encode() + ":".encode() + str(self.servent_port).encode() + " ".encode()
+				print("Dados = ", data[6:].decode())
 				self.topoFlood(data[6:], msgNumSeq, 3, msgIp, port, address[0], self.servent_port)
 			elif typeMessage==7 and self.visited == False:
 				self.visited = True
