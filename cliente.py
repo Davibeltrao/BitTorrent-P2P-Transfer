@@ -32,7 +32,7 @@ class Cliente:
 		self.con.settimeout(4)
 		try:
 			data, adress = self.con.recvfrom(414)
-			#Verificar se mensagem é do tipo 9
+			#Verificar se mensagem e do tipo 9
 			seq = unpack("!L", data[2:6])[0]
 			if seq != seqEsperado:
 				print("Mensagem incorreta do ", adress)

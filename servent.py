@@ -12,6 +12,7 @@ class Servent:
 		self.keyDict = {}
 		self._neighbors = []
 		self.visited = False
+		self.listOfSeqNums = []
 
 	def setDict(self, file):
 		with open(file, 'r') as f:
@@ -42,6 +43,11 @@ class Servent:
 		#msgIp = pack('!B', int(ipOrigem[0])) + pack('!B', int(ipOrigem[1])) + pack('!B', int(ipOrigem[2])) + pack('!B', int(ipOrigem[3])) 
 		msgPorto = pack('!H', portoOrigem)
 		msgInfo = key
+		print( type(msgSeq))
+		print( type(msgTipo))
+		print (type(msgTtl))
+		print (type(msgPorto))
+		print (type(msgInfo))
 		msg = msgTipo+msgTtl+msgSeq+str(ipOrigem)+msgPorto+msgInfo
 		for neighbor in self._neighbors:
 			try:
@@ -52,6 +58,10 @@ class Servent:
 
 	def keyReq(self, data, address):
 		numSeq = unpack("!L", data[2:6])[0]
+		if (address, numSeq) in self.listOfSeqNums:
+			print("Already received this message.")
+			return True
+		self.listOfSeqNums.append((address, numSeq))
 		requestedKey = data[6:].decode()
 		requestedKey = requestedKey.replace('\n', '')
 		print("REQ = ", requestedKey, " & NumSeq = ", numSeq)
@@ -63,7 +73,7 @@ class Servent:
 			finalMessage = resp + seqResp + message
 			sent = self.con.sendto(finalMessage, address)
 			print("SENT = ", sent)
-			return True
+			return False
 		except Exception as e:
 			print("Key Doesnt exist here")
 			return False
@@ -94,6 +104,10 @@ class Servent:
 		#Porta = Porta do servidor atual
 
 		seq = unpack("!L", data[2:6])[0]
+		if (address_cliente, seq) in self.listOfSeqNums:
+			print("Already received this message.")
+			return True
+		self.listOfSeqNums.append((address_cliente, seq))
 		resp = pack("!H", 9)
 		seqResp = pack("!L", seq)
 		print("ADDRESS SEND = ", address_cliente)
@@ -102,6 +116,7 @@ class Servent:
 		if flag_frist == True:
 			finalMessage = finalMessage + address[0].encode() + ":".encode() + str(self.servent_port).encode() + " ".encode()
 		sent = self.con.sendto(finalMessage, address_cliente)	
+		return False
 
 
 	def loop(self):
@@ -109,12 +124,14 @@ class Servent:
 			data, address = self.con.recvfrom(414)
 			typeMessage = unpack("!H", data[:2])[0]
 			print("TYPE = ", typeMessage)
+			print("DATA = ", data)
+			print("FROM = ", address)
 			if typeMessage == 5:
 				self.visited = False
 				msgNumSeq = unpack('!L', data[2:6])[0]
 				achouChave = self.keyReq(data, address)
 				if achouChave==True:
-					continue # Talvez retirar, pra continuar as iterações
+					continue # Talvez retirar, pra continuar as iteracoes
 				ip, port = address
 				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
 				self.keyFlood(data[6:], msgNumSeq, 3, msgIp, port)
@@ -125,12 +142,13 @@ class Servent:
 				ip, port = address
 				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
 				msgNumSeq = unpack('!L', data[2:6])[0]
-				self.topoReq(data, address, info_inicial, address, self.servent_port, flag_frist)
+				jaRecebeu = self.topoReq(data, address, info_inicial, address, self.servent_port, flag_frist)
+				if jaRecebeu==True:
+					continue
 				data = data + address[0].encode() + ":".encode() + str(self.servent_port).encode() + " ".encode()
 				print("Dados = ", data[6:].decode())
 				self.topoFlood(data[6:], msgNumSeq, 3, msgIp, port, address[0], self.servent_port)
-			elif typeMessage==7 and self.visited == False:
-				self.visited = True
+			elif typeMessage==7:
 				msgTtl = unpack('!H', data[2:4])[0]
 				if msgTtl<=0:
 					continue
@@ -142,10 +160,11 @@ class Servent:
 				addr = (ipStr, int(msgPort))
 				achouChave = self.keyReq((b'00'+data[4:8]+data[14:]), addr)
 				if achouChave==True:
-					continue # Acho q tem q tirar esse continue, pra continuar as iterações
-				self.keyFlood(data[14:], msgNumSeq, int(msgTtl)-1, msgIpOrig, msgPort)
-			elif typeMessage==8 and self.visited == False:
-				self.visited = True
+					continue # Acho q tem q tirar esse continue, pra continuar as iteracoes
+				if int(msgTtl)==1:
+					continue
+				self.keyFlood(data[14:], msgNumSeq, int(msgTtl)-1, data[8:12], msgPort)
+			elif typeMessage==8:
 				msgTtl = unpack('!H', data[2:4])[0]
 				if msgTtl<=0:
 					continue
@@ -158,6 +177,8 @@ class Servent:
 				self.topoReq(data[2:], address, data[14:], address_cliente, self.servent_port)
 				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
 				#print("INFO = ", info)
+				if int(msgTtl)==1:
+					continue
 				self.topoFlood(data[14:], msgNumSeq, int(msgTtl)-1, msgIp, msgPort, address[0], self.servent_port)
 				continue
 			elif typeMessage == 9:
