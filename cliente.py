@@ -32,16 +32,18 @@ class Cliente:
 		self.con.settimeout(4)
 		try:
 			data, adress = self.con.recvfrom(414)
+			#Verificar se mensagem é do tipo 9
 			seq = unpack("!L", data[2:6])[0]
 			if seq != seqEsperado:
 				print("Mensagem incorreta do ", adress)
-			print("Data Received = ", data)
+			else:
+				print("Data Received = ", data)
 		except:
 			print("Retrasmiting Data....")
 			flagRetransmissao = True
 		finally:
-			self.numSeq = self.numSeq + 1
 			if flagRetransmissao == True:
+				self.numSeq = self.numSeq + 1
 				print("New NumSeq = ", self.numSeq)
 				seq = pack("!L", self.numSeq)
 				finalMessage = messageType + seq + key
@@ -51,12 +53,25 @@ class Cliente:
 					seq = unpack("!L", data[2:6])[0]
 					if seq != self.numSeq:
 						print("Mensagem incorreta do ", adress)
-					print("Data Received = ", data)
+					else:
+						print("Data Received = ", data)
 				except:
 					print("Nenhuma resposta recebida")
 				finally:
-					self.con.settimeout(0)
-					self.numSeq = self.numSeq + 1
+					#self.con.settimeout(0)
+					print("Terminei retransmissao")
+			try:
+				while True:
+					data, adress = self.con.recvfrom(414)
+					seq = unpack("!L", data[2:6])[0]
+					if seq != seqEsperado:
+						print("Mensagem incorreta do ", adress)
+					else:
+						print("Data Received = ", data)	
+			except:
+				print("No more data")
+			self.numSeq = self.numSeq + 1
+
 
 	def receiveTopologyData(self, messageType, seqEsperado):
 		flagRetransmissao = False
@@ -66,13 +81,14 @@ class Cliente:
 			seq = unpack("!L", data[2:6])[0]
 			if seq != seqEsperado:
 				print("Mensagem incorreta do ", adress)
-			print("Data Received = ", data)
+			#print("Data Received = ", data)
+			print(adress, " Send = ", data[6:].decode())
 		except:
 			print("Retrasmiting Data....")
 			flagRetransmissao = True
 		finally:
-			self.numSeq = self.numSeq + 1
 			if flagRetransmissao == True:
+				self.numSeq = self.numSeq + 1
 				print("New NumSeq = ", self.numSeq)
 				seq = pack("!L", self.numSeq)
 				finalMessage = messageType + seq
@@ -82,12 +98,28 @@ class Cliente:
 					seq = unpack("!L", data[2:6])[0]
 					if seq != self.numSeq:
 						print("Mensagem incorreta do ", adress)
+						print("Teste = ", data[6:].decode())
 					print("Data Received = ", data)
+					print("Teste = ", data[6:].decode())
 				except:
 					print("Nenhuma resposta recebida")
 				finally:
-					self.con.settimeout(0)
-					self.numSeq = self.numSeq + 1
+					print("Terminei retransmissao")
+			try:
+				while True:
+					data, adress = self.con.recvfrom(414)
+					seq = unpack("!L", data[2:6])[0]
+					#print("SEQ ESPERADO = ", seqEsperado, " & SEQ = ", seq)
+					if seq != seqEsperado and flagRetransmissao == False:
+						print("Mensagem incorreta do ", adress)
+						#print("Teste = ", data[6:].decode())
+					else:
+					#	print("Data Received = ", data)	
+						print(adress, " Send = ", data[6:].decode())
+			except:
+				print("No more data")
+			self.numSeq = self.numSeq + 1
+
 
 	def quit(self):
 		self.con.close()
