@@ -36,7 +36,7 @@ class Cliente:
 			else:
 				print(adress, " has the key ", data[6:].decode())
 		except:
-			#print("Retrasmiting Data....")
+			print("Retrasmiting Data....")
 			flagRetransmissao = True
 		finally:
 			if flagRetransmissao == True:
@@ -53,6 +53,7 @@ class Cliente:
 						print(adress, " has the key ", data[6:].decode())
 				except:
 					print("\nNENHUMA RESPOSTA RECEBIDA\n")
+					self.numSeq = self.numSeq + 1
 					return
 				finally:
 			#		print("Terminei retransmissao")
@@ -97,6 +98,7 @@ class Cliente:
 						print(adress, " <=Topology=> ", data[6:].decode())		
 				except:
 					print("\nNENHUMA RESPOSTA RECEBIDA\n")
+					self.numSeq = self.numSeq + 1
 					return
 				finally:
 					#print("Terminei retransmissao")
