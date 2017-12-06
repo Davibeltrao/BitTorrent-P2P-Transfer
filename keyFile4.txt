@@ -1,5 +1,6 @@
 # WELL KNOWN PORT NUMBERS
 #
+chave1	1/udp # teste
 chave32 1/tcp # TCP Port Service Multiplexer 
 key3 	2/tcp # quero ver a treta
 borachanve 1/udp ta maluco ta doidao

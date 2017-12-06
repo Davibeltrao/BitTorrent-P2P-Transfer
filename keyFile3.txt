@@ -5,3 +5,4 @@ chave32 1/tcp # TCP Port Service Multiplexer
 chave31 2/ddp # Name Binding Protocol
 chave32 2/udp # Management Utility
 pp 3/udp #bora mlk
+chave1	1/udp # teste

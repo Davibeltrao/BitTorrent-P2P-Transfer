@@ -40,14 +40,8 @@ class Servent:
 		msgSeq = pack('!L', numSeq)
 		msgTipo = pack('!H', 7)
 		msgTtl = pack('!H', ttl)
-		#msgIp = pack('!B', int(ipOrigem[0])) + pack('!B', int(ipOrigem[1])) + pack('!B', int(ipOrigem[2])) + pack('!B', int(ipOrigem[3])) 
 		msgPorto = pack('!H', portoOrigem)
 		msgInfo = key
-		print( type(msgSeq))
-		print( type(msgTipo))
-		print (type(msgTtl))
-		print (type(msgPorto))
-		print (type(msgInfo))
 		msg = msgTipo+msgTtl+msgSeq+ipOrigem+msgPorto+msgInfo
 		for neighbor in self._neighbors:
 			try:
@@ -72,7 +66,6 @@ class Servent:
 			message = keyResp.encode()
 			finalMessage = resp + seqResp + message
 			sent = self.con.sendto(finalMessage, address)
-			print("SENT = ", sent)
 			return False
 		except Exception as e:
 			print("Key Doesnt exist here")
@@ -80,29 +73,22 @@ class Servent:
 
 	def topoFlood(self, key, numSeq, ttl, ipOrigem, portoOrigem, address0, address1):
 		msgSeq = pack('!L', numSeq)
-		#print("SEQUENCIA  = ", numSeq)
 		msgTipo = pack('!H', 8)
 		msgTtl = pack('!H', ttl)
-		#msgIp = pack('!B', int(ipOrigem[0])) + pack('!B', int(ipOrigem[1])) + pack('!B', int(ipOrigem[2])) + pack('!B', int(ipOrigem[3])) 
 		msgPorto = pack('!H', portoOrigem)
 		msgInfo = key
 		fim_info = ""
 		msg = msgTipo+msgTtl+msgSeq+ipOrigem+msgPorto+msgInfo
-		print("INFO DA MENSAGEM = ", msgInfo.decode())
 		for neighbor in self._neighbors:
 			try:
 				(addr, port) = neighbor
 				fim_info = addr.encode() + ":".encode() + str(port).encode() + " ".encode()
-				#fim_info = ""
-				print("FIM MENSAGEM = ", fim_info)
-				#msg = msg + fim_info
 				self.con.sendto(msg + fim_info, (addr, int(port)))
 			except Exception as e:
 				print("Dude where's my neighbor?")
 
 	def topoReq(self, data, address, info, address_cliente, porta, flag_frist = False):
 		#Porta = Porta do servidor atual
-
 		seq = unpack("!L", data[2:6])[0]
 		if (address_cliente, seq) in self.listOfSeqNums:
 			print("Already received this message.")
@@ -110,22 +96,16 @@ class Servent:
 		self.listOfSeqNums.append((address_cliente, seq))
 		resp = pack("!H", 9)
 		seqResp = pack("!L", seq)
-		print("ADDRESS SEND = ", address_cliente)
 		finalMessage = resp + seqResp + info
-		print("INFO = ", info)
 		if flag_frist == True:
 			finalMessage = finalMessage + address[0].encode() + ":".encode() + str(self.servent_port).encode() + " ".encode()
 		sent = self.con.sendto(finalMessage, address_cliente)	
 		return False
 
-
 	def loop(self):
 		while True:
 			data, address = self.con.recvfrom(414)
 			typeMessage = unpack("!H", data[:2])[0]
-			print("TYPE = ", typeMessage)
-			print("DATA = ", data)
-			print("FROM = ", address)
 			if typeMessage == 5:
 				msgNumSeq = unpack('!L', data[2:6])[0]
 				achouChave = self.keyReq(data, address)
@@ -156,9 +136,6 @@ class Servent:
 				
 				teste = socket.inet_ntoa(data[8:12])
 				
-				print("SERA MANO??? = ", teste)
-				#codigo do keyReq() nao funciona?
-				#ipStr = str(unpack('!B', data[8])[0])+'.'+str(unpack('!B', data[9])[0])+'.'+str(unpack('!B', data[10])[0])+'.'+str(unpack('!B', data[11])[0])
 				addr = (teste, int(msgPort))
 				achouChave = self.keyReq((b'00'+data[4:8]+data[14:]), addr)
 				if achouChave==True:
@@ -174,30 +151,18 @@ class Servent:
 				msgIpOrig = unpack('!L', data[8:12])[0]
 				msgPort = unpack('!H', data[12:14])[0]
 				ip, port = address
-				print("IP ORIG = ", msgIpOrig)
-
+				
 				teste = socket.inet_ntoa(data[8:12])
 
 				address_cliente = (teste, msgPort)
-				print("CLIENTE AD = ", address_cliente)
 				self.topoReq(data[2:], address, data[14:], address_cliente, self.servent_port)
 				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
-				#print("INFO = ", info)
 				if int(msgTtl)==1:
 					continue
 				self.topoFlood(data[14:], msgNumSeq, int(msgTtl)-1, msgIp, msgPort, address[0], self.servent_port)
 				continue
 			elif typeMessage == 9:
 				print("RECEBI DADOS dados = ", data[6:])
-
-#Bind the socket to the port
-# while True:
-#     print(sys.stderr, '\nwaiting to receive message')
-#     data, address = sock.recvfrom(414)
-#     if data:
-#         sent = sock.sendto(data, address)
-#         print >>sys.stderr, 'sent %s bytes back to %s' % (sent, address)
-
 
 if __name__ == "__main__":
 	PORT = int(sys.argv[1])

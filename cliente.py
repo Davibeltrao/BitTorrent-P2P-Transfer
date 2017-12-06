@@ -19,11 +19,9 @@ class Cliente:
 	def keyConsult(self, message):
 		print(message)
 		messageType = pack("!H", 5)
-		print("NumSeq = ", self.numSeq)
 		seq = pack("!L", self.numSeq)
 		key = message.encode()
 		finalMessage = messageType + seq + key
-		print("ServAdress = ", self.servAdress)
 		sent = self.con.sendto(finalMessage, self.servAdress)
 		self.receiveKeyData(messageType, self.numSeq, key)
 
@@ -32,20 +30,17 @@ class Cliente:
 		self.con.settimeout(4)
 		try:
 			data, adress = self.con.recvfrom(414)
-			#Verificar se mensagem e do tipo 9
 			seq = unpack("!L", data[2:6])[0]
 			if seq != seqEsperado:
 				print("Mensagem incorreta do ", adress)
 			else:
-				#print("Data Received = ", data)
 				print(adress, " has the key ", data[6:].decode())
 		except:
-			print("Retrasmiting Data....")
+			#print("Retrasmiting Data....")
 			flagRetransmissao = True
 		finally:
 			if flagRetransmissao == True:
 				self.numSeq = self.numSeq + 1
-				print("New NumSeq = ", self.numSeq)
 				seq = pack("!L", self.numSeq)
 				finalMessage = messageType + seq + key
 				sent = self.con.sendto(finalMessage, self.servAdress)
@@ -55,13 +50,13 @@ class Cliente:
 					if seq != self.numSeq or seq != seqEsperado + 1:
 						print("Mensagem incorreta do ", adress)
 					else:
-					#	print("Data Received = ", data)
 						print(adress, " has the key ", data[6:].decode())
 				except:
-					print("Nenhuma resposta recebida")
+					print("\nNENHUMA RESPOSTA RECEBIDA\n")
+					return
 				finally:
-					#self.con.settimeout(0)
-					print("Terminei retransmissao")
+			#		print("Terminei retransmissao")
+					pass
 			try:
 				while True:
 					data, adress = self.con.recvfrom(414)
@@ -69,7 +64,6 @@ class Cliente:
 					if seq != seqEsperado:
 						print("Mensagem incorreta do ", adress)
 					else:
-					#	print("Data Received = ", data)	
 						print(adress, " has the key ", data[6:].decode())
 			except:
 				print("No more data")
@@ -84,15 +78,13 @@ class Cliente:
 			seq = unpack("!L", data[2:6])[0]
 			if seq != seqEsperado:
 				print("Mensagem incorreta do ", adress)
-			#print("Data Received = ", data)
-			print(adress, " Send = ", data[6:].decode())
+			print(adress, " <=Topology=> ", data[6:].decode())
 		except:
 			print("Retrasmiting Data....")
 			flagRetransmissao = True
 		finally:
 			if flagRetransmissao == True:
 				self.numSeq = self.numSeq + 1
-				print("New NumSeq = ", self.numSeq)
 				seq = pack("!L", self.numSeq)
 				finalMessage = messageType + seq
 				sent = self.con.sendto(finalMessage, self.servAdress)
@@ -101,25 +93,22 @@ class Cliente:
 					seq = unpack("!L", data[2:6])[0]
 					if seq != self.numSeq or seq != seqEsperado + 1:
 						print("Mensagem incorreta do ", adress)
-						print("Teste = ", data[6:].decode())
 					else:
-						print("Data Received = ", data)
-						print("Teste = ", data[6:].decode())
+						print(adress, " <=Topology=> ", data[6:].decode())		
 				except:
-					print("Nenhuma resposta recebida")
+					print("\nNENHUMA RESPOSTA RECEBIDA\n")
+					return
 				finally:
-					print("Terminei retransmissao")
+					#print("Terminei retransmissao")
+					pass
 			try:
 				while True:
 					data, adress = self.con.recvfrom(414)
 					seq = unpack("!L", data[2:6])[0]
-					#print("SEQ ESPERADO = ", seqEsperado, " & SEQ = ", seq)
 					if seq != seqEsperado and flagRetransmissao == False:
 						print("Mensagem incorreta do ", adress)
-						#print("Teste = ", data[6:].decode())
 					else:
-					#	print("Data Received = ", data)	
-						print(adress, " Send = ", data[6:].decode())
+						print(adress, " <=Topology=> ", data[6:].decode())
 			except:
 				print("No more data")
 			self.numSeq = self.numSeq + 1
@@ -130,6 +119,12 @@ class Cliente:
 
 	def loop(self):
 		while True:
+			print('==============================================')
+			print('   	     O QUE DESEJA FAZER ?')
+			print('    ?  + chave = Consulta por uma chave')
+			print('    T          = Consulta a topologia da rede')
+			print('    Q          = Terminar')
+			print('==============================================')
 			message = sys.stdin.readline()
 			if(message[0] == "Q"):
 				print("QUIT")
