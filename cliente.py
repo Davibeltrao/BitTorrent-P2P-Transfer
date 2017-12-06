@@ -37,7 +37,8 @@ class Cliente:
 			if seq != seqEsperado:
 				print("Mensagem incorreta do ", adress)
 			else:
-				print("Data Received = ", data)
+				#print("Data Received = ", data)
+				print(adress, " has the key ", data[6:].decode())
 		except:
 			print("Retrasmiting Data....")
 			flagRetransmissao = True
@@ -51,10 +52,11 @@ class Cliente:
 				try:
 					data, adress = self.con.recvfrom(414)
 					seq = unpack("!L", data[2:6])[0]
-					if seq != self.numSeq:
+					if seq != self.numSeq or seq != seqEsperado + 1:
 						print("Mensagem incorreta do ", adress)
 					else:
-						print("Data Received = ", data)
+					#	print("Data Received = ", data)
+						print(adress, " has the key ", data[6:].decode())
 				except:
 					print("Nenhuma resposta recebida")
 				finally:
@@ -67,7 +69,8 @@ class Cliente:
 					if seq != seqEsperado:
 						print("Mensagem incorreta do ", adress)
 					else:
-						print("Data Received = ", data)	
+					#	print("Data Received = ", data)	
+						print(adress, " has the key ", data[6:].decode())
 			except:
 				print("No more data")
 			self.numSeq = self.numSeq + 1
@@ -96,11 +99,12 @@ class Cliente:
 				try:
 					data, adress = self.con.recvfrom(414)
 					seq = unpack("!L", data[2:6])[0]
-					if seq != self.numSeq:
+					if seq != self.numSeq or seq != seqEsperado + 1:
 						print("Mensagem incorreta do ", adress)
 						print("Teste = ", data[6:].decode())
-					print("Data Received = ", data)
-					print("Teste = ", data[6:].decode())
+					else:
+						print("Data Received = ", data)
+						print("Teste = ", data[6:].decode())
 				except:
 					print("Nenhuma resposta recebida")
 				finally:

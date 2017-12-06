@@ -48,7 +48,7 @@ class Servent:
 		print (type(msgTtl))
 		print (type(msgPorto))
 		print (type(msgInfo))
-		msg = msgTipo+msgTtl+msgSeq+str(ipOrigem)+msgPorto+msgInfo
+		msg = msgTipo+msgTtl+msgSeq+ipOrigem+msgPorto+msgInfo
 		for neighbor in self._neighbors:
 			try:
 				(addr, port) = neighbor
@@ -127,7 +127,6 @@ class Servent:
 			print("DATA = ", data)
 			print("FROM = ", address)
 			if typeMessage == 5:
-				self.visited = False
 				msgNumSeq = unpack('!L', data[2:6])[0]
 				achouChave = self.keyReq(data, address)
 				if achouChave==True:
@@ -136,7 +135,6 @@ class Servent:
 				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
 				self.keyFlood(data[6:], msgNumSeq, 3, msgIp, port)
 			elif typeMessage == 6:
-				self.visited = False
 				flag_frist = True
 				info_inicial = "".encode()
 				ip, port = address
@@ -155,9 +153,13 @@ class Servent:
 				msgNumSeq = unpack('!L', data[4:8])[0]
 				msgIpOrig = unpack('!L', data[8:12])[0]
 				msgPort = unpack('!H', data[12:14])[0]				#enviar resposta
+				
+				teste = socket.inet_ntoa(data[8:12])
+				
+				print("SERA MANO??? = ", teste)
 				#codigo do keyReq() nao funciona?
-				ipStr = str(unpack('!B', data[8])[0])+'.'+str(unpack('!B', data[9])[0])+'.'+str(unpack('!B', data[10])[0])+'.'+str(unpack('!B', data[11])[0])
-				addr = (ipStr, int(msgPort))
+				#ipStr = str(unpack('!B', data[8])[0])+'.'+str(unpack('!B', data[9])[0])+'.'+str(unpack('!B', data[10])[0])+'.'+str(unpack('!B', data[11])[0])
+				addr = (teste, int(msgPort))
 				achouChave = self.keyReq((b'00'+data[4:8]+data[14:]), addr)
 				if achouChave==True:
 					continue # Acho q tem q tirar esse continue, pra continuar as iteracoes
@@ -172,7 +174,11 @@ class Servent:
 				msgIpOrig = unpack('!L', data[8:12])[0]
 				msgPort = unpack('!H', data[12:14])[0]
 				ip, port = address
-				address_cliente = (ip, msgPort)
+				print("IP ORIG = ", msgIpOrig)
+
+				teste = socket.inet_ntoa(data[8:12])
+
+				address_cliente = (teste, msgPort)
 				print("CLIENTE AD = ", address_cliente)
 				self.topoReq(data[2:], address, data[14:], address_cliente, self.servent_port)
 				msgIp = pack('!B', int(ip.split('.')[0])) + pack('!B', int(ip.split('.')[1])) + pack('!B', int(ip.split('.')[2])) + pack('!B', int(ip.split('.')[3])) 
